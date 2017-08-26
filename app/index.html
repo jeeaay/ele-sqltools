@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Electron</title>
+ 
+    <link rel="stylesheet" href="https://g.alicdn.com/msui/sm/0.6.2/css/sm.min.css">
+    <link rel="stylesheet" href="https://g.alicdn.com/msui/sm/0.6.2/css/sm-extend.min.css"> 
+    <style>
+        .progress-bar {
+            color: #fff;
+            float: left;
+            background-color: #0a0;
+            display: inline-block;
+            font-size: 12px;
+            line-height: 14px;
+            text-align: center;
+        }
+        
+        .progress .progress-bar:last-child {
+            border-radius: 0 7px 7px 0;
+        }
+        
+        .progress {
+            height: 14px;
+            overflow: hidden;
+            background-color: #f5f5f5;
+            border-radius: 7px;
+            -webkit-box-shadow: inset 0 1px 2px rgba(0, 0, 0, .1);
+            box-shadow: inset 0 1px 2px rgba(0, 0, 0, .1);
+        }
+        
+        .modal {
+            width: 20rem;
+            margin-left: -10rem;
+        }
+        
+        .buttons .button.active {
+            background-color: #0894ec;
+            color: #fff;
+            z-index: 90;
+        }
+        
+        .buttons .button {
+            margin: 1px
+        }
+        
+        .modal .preloader {
+            margin: 0 auto
+        }
+        
+        #holder {
+            display: flex;
+            flex: 1;
+            height: 200px;
+            align-items: center;
+            justify-content: center;
+            border: 1px solid #e0e5e6;
+            background-color: #f6f8f8;
+            color: #466a72;
+            border-radius: 3px;
+            font-size: 30px;
+            font-weight: 300;
+            cursor: default;
+            -webkit-user-select: none;
+        }
+        
+        #holder.hover {
+            border-color: #2ab0cb;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="page-group">
+        <div class="page page-current" style="max-width: 760px;margin: 0 auto;">
+            <header class="bar bar-nav">
+                <h1 class='title'>数据库处理</h1>
+            </header>
+            <div class="content">
+                <div class="list-block">
+                    <ul>
+                        <!-- Text inputs -->
+                        <li class="pub-switch">
+                            <div class="item-content">
+                                <div class="item-inner">
+                                    <div class="item-title label">是否随机时间</div>
+                                    <div class="item-input">
+                                        <label class="label-switch">
+                        <input value="1" id="pubTimeSwitch" type="checkbox">
+                        <div class="checkbox"></div>
+                      </label>
+                                    </div>
+                                </div>
+                            </div>
+                        </li>
+                        <li class="pub-opt">
+                            <div class="item-content">
+                                <div class="item-inner">
+                                    <div class="item-title label">已发布数量</div>
+                                    <div class="item-input">
+                                        <input id="total1" type="text" placeholder="已经发布的文章数量" onKeypress="return (/[\d.]/.test(Math.ceil(String.fromCharCode(event.keyCode))))">
+                                    </div>
+                                </div>
+                            </div>
+                        </li>
+                        <li class="pub-opt">
+                            <div class="item-content">
+                                <div class="item-inner">
+                                    <div class="item-title label">过去天数</div>
+                                    <div class="item-input">
+                                        <input id="passtime" type="text" placeholder="已经发布的文章分布在过去的多少天发完" onKeypress="return (/[\d.]/.test(Math.ceil(String.fromCharCode(event.keyCode))))">
+                                    </div>
+                                </div>
+                            </div>
+                        </li>
+                        <li class="pub-opt">
+                            <div class="item-content">
+                                <div class="item-inner">
+                                    <div class="item-title label">未发布数量</div>
+                                    <div class="item-input">
+                                        <input id="total2" type="text" placeholder="未发布的文章数量" onKeypress="return (/[\d.]/.test(Math.ceil(String.fromCharCode(event.keyCode))))">
+                                    </div>
+                                </div>
+                            </div>
+                        </li>
+                        <li class="pub-opt">
+                            <div class="item-content">
+                                <div class="item-inner">
+                                    <div class="item-title label">未来天数</div>
+                                    <div class="item-input">
+                                        <input id="futuretime" type="text" placeholder="未发布的文章将在未来多少天内发布完成" onKeypress="return (/[\d.]/.test(Math.ceil(String.fromCharCode(event.keyCode))))">
+                                    </div>
+                                </div>
+                            </div>
+                        </li>
+                        <li class="keyword-switch">
+                            <div class="item-content">
+                                <div class="item-inner">
+                                    <div class="item-title label">附加关键词</div>
+                                    <div class="item-input">
+                                        <label class="label-switch">
+                        <input value="1" id="keywordFileSwitch" type="checkbox">
+                        <div class="checkbox"></div>
+                      </label>
+                                    </div>
+                                </div>
+                            </div>
+                        </li>
+                        <li class="keyword-files">
+                            <div class="item-content">
+                                <div class="item-inner">
+                                    <div class="item-title label">附加文件</div>
+                                    <div class="item-input">
+                                        <input id="keywordFilesName" type="text" placeholder="附加关键词文件，点击下面选取，注意顺序">
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="content-block" style="margin:0;padding-bottom: 5px">
+                                <p class="buttons-row" style="margin:0;">
+                                    <a href="#" class="button select-key-files"></a>
+                                    请先将附加关键词文件放入 目录中
+                                </p>
+                            </div>
+                        </li>
+                        <li class="division-switch">
+                            <div class="item-content">
+                                <div class="item-inner">
+                                    <div class="item-title label">是否分割数据</div>
+                                    <div class="item-input">
+                                        <label class="label-switch">
+                        <input value="1" id="divTimeSwitch" type="checkbox">
+                        <div class="checkbox"></div>
+                      </label>
+                                    </div>
+                                </div>
+                            </div>
+                        </li>
+                        <li class="division-opt1">
+                            <div class="item-content">
+                                <div class="item-inner">
+                                    <div class="item-title label">每份文章数量</div>
+                                    <div class="item-input">
+                                        <input id="everydb" type="text" placeholder="每份文章数量" onKeypress="return (/[\d.]/.test(Math.ceil(String.fromCharCode(event.keyCode))))">
+                                    </div>
+                                </div>
+                            </div>
+                        </li>
+                        <li class="division-opt2">
+                            <div class="item-content">
+                                <div class="item-inner">
+                                    <div class="item-title label">分割个数</div>
+                                    <div class="item-input">
+                                        <input id="dbcount" type="text" placeholder="分割成多少个数据库" onKeypress="return (/[\d.]/.test(Math.ceil(String.fromCharCode(event.keyCode))))">
+                                    </div>
+                                </div>
+                            </div>
+                        </li>
+                    </ul>
+                </div>
+                
+                    <div id="holder" class="">
+                        把数据库文件拖放到此处
+                    </div>
+                
+            </div>
+        </div>
+        <div class="modal modal-no-buttons modal-in" style="margin-top: -78px;">
+            <div class="modal-inner">
+                <div class="modal-title">正在生成数据库</div>
+                <div class="modal-text">
+                    <div class="progress">
+                        <div class="progress-bar" style="width: 50%;">
+                            &nbsp;</div>
+
+                    </div>
+                    <p id="percent">进度：0%</p>
+                    <div class="preloader"></div>
+                </div>
+            </div>
+            <div class="modal-buttons "></div>
+        </div>
+        <div class="modal-overlay"></div>
+    </div>
+    <!-- <script type='text/javascript' src='https://g.alicdn.com/sj/lib/zepto/zepto.min.js' charset='utf-8'></script>
+    <script type='text/javascript' src='https://g.alicdn.com/msui/sm/0.6.2/js/sm.min.js' charset='utf-8'></script> -->
+    <script>if (typeof module === 'object') {window.module = module; module = undefined;}</script>
+    <script>if (window.module) module = window.module;</script>
+    <script>
+        const $ = require('jquery')
+        const {ipcRenderer} = require('electron')
+        const holder = document.getElementById('holder')
+        
+        holder.ondragover = () => {
+            $("#holder").addClass("hover")
+            return false;
+        }
+        holder.ondragleave = holder.ondragend = () => {
+            $("#holder").removeClass("hover")
+            return false;
+        }
+        holder.ondrop = (e) => {
+            e.preventDefault()
+            let reg = /^(.*)\.db3$/
+            let files =new Array
+            for (let f of e.dataTransfer.files) {
+                if (!f.path.match(reg)) {
+                    alert("仅支持DB3格式的文件");
+                    return false;
+                }
+                files.push(f.path)
+            }
+            //ipcRenderer.sendSync('get-db-parh', files)
+
+            ipcRenderer.on('get-db-parh-reply', function(event, arg) {
+                console.log(arg); 
+            });
+            ipcRenderer.send('get-db-parh', files);
+            return false;
+        }
+        ipcRenderer.on("server-msg", (event, arg) => {
+            console.log(arg)
+        })
+    </script>
+    <script>
+        $(function() {
+            // 显示/隐藏
+            $(".keyword-files").hide();
+            $(".keyword-switch .checkbox").click(function(e) {
+                if ($("#keywordFileSwitch:checked").val()) {
+                    $(".keyword-files").hide();
+                } else {
+                    $(".keyword-files").show();
+                }
+            });
+            $(".pub-opt").hide();
+            $(".pub-switch .checkbox").click(function(e) {
+                if ($("#pubTimeSwitch:checked").val()) {
+                    $(".pub-opt").hide();
+                } else {
+                    $(".pub-opt").show();
+                }
+            });
+            $(".division-opt1,.division-opt2").hide();
+            $(".division-switch .checkbox").click(function(e) {
+                if ($("#divTimeSwitch:checked").val()) {
+                    $(".division-opt1,.division-opt2").hide();
+                } else {
+                    $(".division-opt1,.division-opt2").show();
+                }
+            });
+            // 选取附加关键词文件
+            $(".select-key-files").click(function(e) {
+                e.preventDefault();
+                if ($(this).hasClass("active")) {
+                    $(this).removeClass("active");
+                    var val = $("#keywordFilesName").val();
+                    val = val.replace($.trim($(this).html()), "");
+                    $("#keywordFilesName").val($.trim(val));
+                } else {
+                    $(this).addClass("active");
+                    $("#keywordFilesName").val($.trim($("#keywordFilesName").val() + " " + $(this).html()));
+                }
+            });
+        })
+    </script>
+
+</body>
+
+
+</html>

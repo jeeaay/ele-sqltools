@@ -284,10 +284,12 @@
                     alert("仅支持db3后缀的文件");
                     return false;
                 }
+                //这里改写为异步
                 dbRowsCount += ipcRenderer.sendSync('get-db-rows', f.path)
                 $(".db-holder h3").hide()
+
                 $(".db-holder ul").append("<li>"+path.basename(f.path)+"</li>")
-                dbArr.push(f.path)     
+                dbArr.push(f.path)
                 $(".dialog-mask").hide()
                 console.log(dbRowsCount)
             }

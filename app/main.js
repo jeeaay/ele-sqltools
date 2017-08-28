@@ -58,9 +58,9 @@ app.on('activate', () => {
 ipcMain.on('get-db-rows', (event, arg) => {
     let db = new sqlite3.Database(arg)
     db.get("select count(*) from Content",function (err,row) {
-        for (var key in row) {
+        for (let key in row) {
             if (row.hasOwnProperty(key)) {
-                var element = row[key]
+                let element = row[key]
                 event.returnValue = element
             }
         }

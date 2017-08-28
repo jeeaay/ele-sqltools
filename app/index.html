@@ -227,7 +227,10 @@
     </div>
     <!-- <script type='text/javascript' src='https://g.alicdn.com/sj/lib/zepto/zepto.min.js' charset='utf-8'></script>
     <script type='text/javascript' src='https://g.alicdn.com/msui/sm/0.6.2/js/sm.min.js' charset='utf-8'></script> -->
-    <script>window.$ = window.jQuery = require('./static/jquery.min.js');</script>
+    <script>if (typeof module === 'object') {window.module = module; module = undefined;}</script>
+    <script src="./static/jquery.min.js"></script>
+    <script>if (window.module) module = window.module;</script>
+    <script>window.$ = window.jQuery = require('jquery.js');</script>
     <script>
         const {ipcRenderer} = require('electron')
         const holder = document.getElementById('holder')

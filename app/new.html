@@ -1,16 +1,305 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta http-equiv="X-UA-Compatible" content="ie=edge">
-    <title>Document</title>
-    <link rel="stylesheet" href="./static/pintuer.css">
+    <title>SQLite处理工具</title>
+    <link rel="stylesheet" href="./static/css/pintuer.css">
+    <link rel="stylesheet" href="./static/css/fa.css">
+    <style>
+        .panel,.db-holder {margin-top: 10px}
+        .db-holder {margin-bottom: 10px}
+        .holder {
+            display: flex;
+            flex: 1;
+            align-items: center;
+            justify-content: center;
+            border: 1px solid #e0e5e6;
+            background-color: #f6f8f8;
+            color: #466a72;
+            border-radius: 3px;
+            font-size: 30px;
+            font-weight: 300;
+            cursor: default;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+        
+        .holder.hover {border-color: #2ab0cb;}
+        .rand-time-opt,.div-db-opt{display: none}
+        .button::before{padding-right: 5px}
+        .dialog-mask{opacity: 0.8;display: none}
+        .dialog-mask .icon::before{color:#aed;font-size: 100px; }
+        .dialog-mask .icon{position: absolute;position: fixed;margin: 0 auto}
+        .msg h3{color: #0a8;text-align: center;padding: 20px 0}
+        .msg{width: 100px;margin: 0 auto;padding-top: 50px}
+        
+    </style>
 </head>
-<body>
-    
 
-    <script>window.$ = window.jQuery = require('./static/jquery.min.js');</script>
-    <script src="./static/pintuer.js"></script>
+<body>
+    <div class="container">
+        <form class="form-x">
+            <!-- 拖放数据库 -->
+            <div class="holder db-holder" style="height:150px">
+                <h3>请将数据库文件拖放到此处，同时拖放多个将会合并</h3>
+                <ul class="list-unstyle list-inline">
+                    
+                </ul>
+            </div>
+            <!--随机时间-->
+            <div class="panel">
+                <div class="panel-body">
+                    <div class="form-group">
+                        <div class="label">
+                            <strong class="tips" data-toggle="hover" data-place="top" title="选择是否需要添加随机的发布时间">随机时间：</strong>
+                        </div>
+                        <div class="field">
+                            <div class="button-group radio is-rand-time">
+                                <label class="button">
+                                    <input name="pintuer" value="1" type="radio"><span class="icon icon-check text-green"></span> 确定，添加随机发布时间
+                                </label>
+                                <label class="button active">
+                                    <input name="pintuer" value="0" checked="checked" type="radio"><span class="icon icon-times"></span> 取消，一次性发布所有文章
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                    <!--随机时间选项-->
+                    <div class="rand-time-opt">
+                        <div class="form-group">
+                            <div class="label">
+                                <label>已发布数量：</label>
+                            </div>
+                            <div class="field">
+                                <input class="input" type="text" placeholder="已经发布的文章数量" onkeypress="return (/[\d.]/.test(Math.ceil(String.fromCharCode(event.keyCode))))">
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <div class="label">
+                                <label>过去天数：</label>
+                            </div>
+                            <div class="field">
+                                <input class="input" type="text" placeholder="已发布的文章分布在过去的多少天发完" onkeypress="return (/[\d.]/.test(Math.ceil(String.fromCharCode(event.keyCode))))">
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <div class="label">
+                                <label>未发布数量：</label>
+                            </div>
+                            <div class="field">
+                                <input class="input" type="text" placeholder="未发布的文章数量" onkeypress="return (/[\d.]/.test(Math.ceil(String.fromCharCode(event.keyCode))))">
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <div class="label">
+                                <label>未来天数：</label>
+                            </div>
+                            <div class="field">
+                                <input class="input" type="text" placeholder="未布的文章分布在未来的多少天发完" onkeypress="return (/[\d.]/.test(Math.ceil(String.fromCharCode(event.keyCode))))">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <!--附加关键词-->
+            <div class="panel">
+                <div class="panel-body">
+                    <div class="form-group">
+                        <div class="label">
+                            <strong class="tips" data-toggle="hover" data-place="top" title="选择是否需要在标题最后添加随机的关键词">附加关键词：</strong>
+                        </div>
+                        <div class="field">
+                            <div class="button-group radio is-add-keyword">
+                                <label class="button">
+                                        <input name="pintuer" value="1" type="radio"><span class="icon icon-check text-green"></span> 确定
+                                    </label>
+                                <label class="button active">
+                                        <input name="pintuer" value="0" checked="checked" type="radio"><span class="icon icon-times"></span> 取消
+                                    </label>
+                            </div>
+                            <span id="clear-keyword-list" class="float-right padding" style="cursor: pointer">清除选择</span>
+                        </div>
+
+                    </div>
+                    <div class="holder add-keyword-opt" style="height:80px">
+                        <h3>请将随机关键词文件拖放到此处</h3>
+                        <ul class="list-unstyle list-inline">
+                            
+                        </ul>
+                    </div>
+                    <input type="hidden" id="keyword-files">
+                </div>
+            </div>
+            <!--分割数据-->
+            <div class="panel">
+                <div class="panel-body">
+                    <div class="form-group">
+                        <div class="label">
+                            <strong class="tips" data-toggle="hover" data-place="top" title="选择是否需要分割数据">分割数据：</strong>
+                        </div>
+                        <div class="field">
+                            <div class="button-group radio is-div-db">
+                                <label class="button">
+                                    <input name="pintuer" value="1" type="radio"><span class="icon icon-check text-green"></span> 确定
+                                </label>
+                                <label class="button active">
+                                    <input name="pintuer" value="0" checked="checked" type="radio"><span class="icon icon-times"></span> 取消
+                                </label>
+                            </div>
+                        </div>
+
+                    </div>
+                    <div class="div-db-opt">
+                        <div class="form-group">
+                            <div class="label">
+                                <label>每份数量：</label>
+                            </div>
+                            <div class="field">
+                                <input class="input" type="text" placeholder="每份文章数，填写这里将会按此数量平分，不够的话最后一个数据库会少一些" onkeypress="return (/[\d.]/.test(Math.ceil(String.fromCharCode(event.keyCode))))">
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <div class="label">
+                                <label>分割个数：</label>
+                            </div>
+                            <div class="field">
+                                <input class="input" type="text" placeholder="分割成多少个数据库，填写这里将会比较平均" onkeypress="return (/[\d.]/.test(Math.ceil(String.fromCharCode(event.keyCode))))">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <button type="button" class="button icon-play text-blue" id="submit">开始</button>
+            <button type="button" class="button icon-undo text-yellow" id="reset">重置</button>
+            <div class="dialog-mask">
+                <div class="msg">
+                    <h3>处理中...</h3>
+                    <i class="icon icon-spinner rotate" aria-hidden="true"></i>
+                </div>
+            </div>
+        </form>
+    </div>
+
+
+    <!-- <script src="./static/js/jquery.js"></script> -->
+    <script>if (typeof module === 'object') {window.module = module; module = undefined;}</script>
+    <script src="./static/js/jquery.js"></script>
+    <script>if (window.module) module = window.module;</script>
+
+    <script src="./static/js/pintuer.js"></script>
+    <script>
+        const {ipcRenderer} = require('electron')
+        const path = require('path')
+        $(function (){
+            //选项显示、隐藏
+            $(".is-rand-time .button").click(function (){
+                if ($(this).children().val()==1) {
+                    $(".rand-time-opt").slideDown(100)
+                }
+                if ($(this).children().val()==0) {
+                    $(".rand-time-opt").slideUp(100)
+                }
+            })
+            $(".add-keyword-opt").hide()
+            $(".panel").hide()
+            $(".is-add-keyword .button").click(function (){
+                if ($(this).children().val()==1) {
+                    $(".add-keyword-opt").slideDown(100)
+                }
+                if ($(this).children().val()==0) {
+                    $(".add-keyword-opt").slideUp(100)
+                }
+            })
+            $(".is-div-db .button").click(function (){
+                if ($(this).children().val()==1) {
+                    $(".div-db-opt").slideDown(100)
+                }
+                if ($(this).children().val()==0) {
+                    $(".div-db-opt").slideUp(100)
+                }
+            })
+            //清除关键词选择
+            $("#clear-keyword-list").click(function () {
+                $(".add-keyword-opt ul").html("")
+                $(".add-keyword-opt h3").show()
+                $("#keyword-files").val("")
+            })
+            //reset
+            $("#reset").click(function () {
+                location.reload()
+            })
+        })
+        //拖放关键词文件
+        const keywordHolder = document.getElementsByClassName('add-keyword-opt')[0]
+        keywordHolder.ondragover = () => {
+            $(".add-keyword-opt").addClass("hover")
+            return false;
+        }
+        keywordHolder.ondragleave = keywordHolder.ondragend = () => {
+            $(".add-keyword-opt").removeClass("hover")
+            return false;
+        }
+        keywordHolder.ondrop = (e) => {
+            e.preventDefault()
+            let reg = /^(.*)\.txt$/
+            for (let f of e.dataTransfer.files) {
+                if (!f.path.match(reg)) {
+                    alert("仅支持txt格式的文件");
+                    return false;
+                }
+                $(".add-keyword-opt h3").hide()
+                $(".add-keyword-opt ul").append("<li>"+path.basename(f.path)+"</li>")
+                if($("#keyword-files").val()==""){
+                    $("#keyword-files").val(path.basename(f.path))
+                }else{
+                    $("#keyword-files").val($("#keyword-files").val()+" "+path.basename(f.path))
+                }        
+            }
+            return false;
+        }
+        //拖放数据库
+        var dbArr = new Array
+        var dbRowsCount = 0
+        const dbHolder = document.getElementsByClassName('db-holder')[0]
+        dbHolder.ondragover = () => {
+            $(".db-holder").addClass("hover")
+            return false;
+        }
+        dbHolder.ondragleave = dbHolder.ondragend = () => {
+            $(".db-holder").removeClass("hover")
+            return false;
+        }
+        dbHolder.ondrop = (e) => {
+            e.preventDefault()
+            $(".panel").show()
+            $(".db-holder").removeClass("hover")
+            let reg = /^(.*)\.db3$/
+            $(".dialog-mask h3").html("正在计算")
+            $(".dialog-mask").show()
+            for (let f of e.dataTransfer.files) {
+                if (!f.path.match(reg)) {
+                    alert("仅支持db3后缀的文件");
+                    return false;
+                }
+                dbRowsCount += ipcRenderer.sendSync('get-db-rows', f.path)
+                $(".db-holder h3").hide()
+                $(".db-holder ul").append("<li>"+path.basename(f.path)+"</li>")
+                dbArr.push(f.path)     
+                $(".dialog-mask").hide()
+                console.log(dbRowsCount)
+            }
+            return false;
+        }
+
+        var CalcRows = function (db) {
+            ipcRenderer.sendSync('get-db-rows', db)
+        }
+    </script>
+
+    
 </body>
+
 </html>

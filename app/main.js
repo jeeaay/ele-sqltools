@@ -55,8 +55,19 @@ app.on('activate', () => {
 // 在这文件，你可以续写应用剩下主进程代码。
 // 也可以拆分成几个文件，然后用 require 导入。
 
+ipcMain.on('get-db-rows', (event, arg) => {
+    let db = new sqlite3.Database(arg)
+    db.get("select count(*) from Content",function (err,row) {
+        for (var key in row) {
+            if (row.hasOwnProperty(key)) {
+                var element = row[key]
+                event.returnValue = element
+            }
+        }
+    })
+})
 
-ipcMain.on('get-db-parh', (event, arg) => {
+ipcMain.on('get-db-path', (event, arg) => {
     //初始化结果数据库
     let {resfile,newdb} = getResPath(arg[0])
     //遍历收到的所有要处理的数据库

@@ -56,22 +56,25 @@ app.on('activate', () => {
 
 
 ipcMain.on('get-db-parh', (event, arg) => {
-    console.log(arg)
-    //let {resfile,newdb} = getResPath(arg)
-    event.returnValue = {"file":arg}
-    /* let db = new sqlite3.Database(arg)
-    db.all("SELECT 标题,内容 FROM Content ORDER BY random()",(err, rows)=>{
-        newdb.serialize(() => {
-            
-            newdb.run('BEGIN;');
-            for(var i = 0; i < rows.length; i++) {
-                sql = "INSERT INTO temp_Content (title,content) VALUES('"+rows[i].标题.replace("'","\"")+"','"+rows[i].内容.replace("'","\"")+"')"
-                newdb.run(sql)
-            }
-            
-            newdb.run('COMMIT');
+    //初始化结果数据库
+    let {resfile,newdb} = getResPath(arg[0])
+    //遍历收到的所有要处理的数据库
+    for (let key in arg) {
+        let db = new sqlite3.Database(arg[key])
+        db.all("SELECT 标题,内容 FROM Content ORDER BY random()",(err, rows)=>{
+            newdb.serialize(() => {
+                
+                newdb.run('BEGIN;');
+                for(var i = 0; i < rows.length; i++) {
+                    sql = "INSERT INTO temp_Content (title,content) VALUES('"+rows[i].标题.replace("'","\"")+"','"+rows[i].内容.replace("'","\"")+"')"
+                    newdb.run(sql)
+                }
+                newdb.run('COMMIT');
+            })
         })
-    }) */
+        db.close()
+    }
+    event.sender.send('get-db-parh-reply', {"file":resfile});
 
     //event.returnValue = {"file":resfile}
 

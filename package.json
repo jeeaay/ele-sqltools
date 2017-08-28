@@ -6,6 +6,10 @@
     "electron",
     "sqlite3"
   ],
+  "repository": {
+    "type": "git",
+    "url": "git@github.com:jeeaay/ele-sqltools.git"
+  },
   "version": "1.0.4",
   "author": "Jeeaay <wrjie@msn.cn>",
   "copyright": "© 2017, Liming Ltd.",

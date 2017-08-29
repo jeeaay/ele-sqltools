@@ -70,25 +70,27 @@ ipcMain.on('get-db-rows', (event, arg) => {
 })
 //开始数据处理
 ipcMain.on('submit-data', (event, arg) => {
-    //1. 初始化结果数据库，resfile为数据库路径 newdb为新数据库的sqlite3实例
-    let {resfile,newdb} = setResDb(arg.dbList[0])
-    //2. 合并数据，整合到新数据库的temp_Content
-    for (let key in arg.dbList) {
-        let db = new sqlite3.Database(arg.dbList[key])
-        db.all("SELECT 标题,内容 FROM Content ORDER BY random()",(err, rows)=>{
-            newdb.serialize(() => {
-                newdb.run('BEGIN;');
-                for(var i = 0; i < rows.length; i++) {
-                    sql = "INSERT INTO temp_Content (title,content) VALUES('"+rows[i].标题.replace("'","\"")+"','"+rows[i].内容.replace("'","\"")+"')"
-                    newdb.run(sql)
-                }
-                newdb.run('COMMIT');
+    async () => {
+        //1. 初始化结果数据库，resfile为数据库路径 newdb为新数据库的sqlite3实例
+        let {resfile,newdb} = await setResDb(arg.dbList[0])
+        //2. 合并数据，整合到新数据库的temp_Content
+        for (let key in arg.dbList) {
+            let db = new sqlite3.Database(arg.dbList[key])
+            db.all("SELECT 标题,内容 FROM Content ORDER BY random()",(err, rows)=>{
+                newdb.serialize(() => {
+                    newdb.run('BEGIN;');
+                    for(var i = 0; i < rows.length; i++) {
+                        sql = "INSERT INTO temp_Content (title,content) VALUES('"+rows[i].标题.replace("'","\"")+"','"+rows[i].内容.replace("'","\"")+"')"
+                        newdb.run(sql)
+                    }
+                    newdb.run('COMMIT');
+                })
             })
-        })
-        db.close()
-    }
+            db.close()
+        }
 
-    event.sender.send('data-reply', {"file":resfile});
+        event.sender.send('data-reply', {"file":resfile});
+    }
 })
 
 

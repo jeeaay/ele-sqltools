@@ -55,17 +55,24 @@ app.on('activate', () => {
 // 在这文件，你可以续写应用剩下主进程代码。
 // 也可以拆分成几个文件，然后用 require 导入。
 
+//计算数据库文章数
 ipcMain.on('get-db-rows', (event, arg) => {
     let db = new sqlite3.Database(arg)
     db.get("select count(*) from Content",function (err,row) {
         for (let key in row) {
             if (row.hasOwnProperty(key)) {
                 let element = row[key]
-                event.returnValue = element
+                console.log(element)
+                event.sender.send('db-rows-reply', {"path":arg,"count":element});
             }
         }
     })
 })
+//开始数据处理
+ipcMain.on('submit-data', (event, arg) => {
+    //合并、修改结构
+})
+
 
 ipcMain.on('get-db-path', (event, arg) => {
     //初始化结果数据库
@@ -86,7 +93,7 @@ ipcMain.on('get-db-path', (event, arg) => {
         })
         db.close()
     }
-    event.sender.send('get-db-parh-reply', {"file":resfile});
+    event.sender.send('get-db-path-reply', {"file":resfile});
 
     //event.returnValue = {"file":resfile}
 

@@ -70,19 +70,13 @@ ipcMain.on('get-db-rows', (event, arg) => {
 })
 //开始数据处理
 ipcMain.on('submit-data', (event, arg) => {
-    //合并、修改结构
-})
-
-
-ipcMain.on('get-db-path', (event, arg) => {
-    //初始化结果数据库
-    let {resfile,newdb} = getResPath(arg[0])
-    //遍历收到的所有要处理的数据库
-    for (let key in arg) {
-        let db = new sqlite3.Database(arg[key])
+    //1. 初始化结果数据库，resfile为数据库路径 newdb为新数据库的sqlite3实例
+    let {resfile,newdb} = setResDb(arg.dbList[0])
+    //2. 合并数据，整合到新数据库的temp_Content
+    for (let key in arg.dbList) {
+        let db = new sqlite3.Database(arg.dbList[key])
         db.all("SELECT 标题,内容 FROM Content ORDER BY random()",(err, rows)=>{
             newdb.serialize(() => {
-                
                 newdb.run('BEGIN;');
                 for(var i = 0; i < rows.length; i++) {
                     sql = "INSERT INTO temp_Content (title,content) VALUES('"+rows[i].标题.replace("'","\"")+"','"+rows[i].内容.replace("'","\"")+"')"
@@ -93,19 +87,62 @@ ipcMain.on('get-db-path', (event, arg) => {
         })
         db.close()
     }
-    event.sender.send('get-db-path-reply', {"file":resfile});
+
+    event.sender.send('data-reply', {"file":resfile});
+})
+
+
+ipcMain.on('get-db-path', (event, arg) => {
+    async () => {
+        //初始化结果数据库
+        let {resfile,newdb} =  await setResDb(arg[0])
+        //遍历收到的所有要处理的数据库
+        for (let key in arg) {
+            let db = new sqlite3.Database(arg[key])
+            db.all("SELECT 标题,内容 FROM Content ORDER BY random()",(err, rows)=>{
+                newdb.serialize(() => {
+                    
+                    newdb.run('BEGIN;');
+                    for(var i = 0; i < rows.length; i++) {
+                        sql = "INSERT INTO temp_Content (title,content) VALUES('"+rows[i].标题.replace("'","\"")+"','"+rows[i].内容.replace("'","\"")+"')"
+                        newdb.run(sql)
+                    }
+                    newdb.run('COMMIT');
+                })
+            })
+            db.close()
+        }
+        event.sender.send('get-db-path-reply', {"file":resfile});
+    }
 
     //event.returnValue = {"file":resfile}
 
 })
-//创建生成的数据库文件
-function getResPath (dbpath) {
+//创建结果的数据库文件
+async function setResDb (dbpath) {
     let date = new Date();
     let time = date.getFullYear() + "-" + (date.getMonth() < 10 ? '0' + (date.getMonth()+1) : (date.getMonth()+1)) + "-" + (date.getDate() < 10 ? '0' + date.getDate() : date.getDate()) + "_" + date.getHours() + "-" + date.getMinutes() + "-" +date.getSeconds();
     let resfile = path.dirname(dbpath)+path.sep+time+".db"
     let db = new sqlite3.Database(resfile)
-    db.run("CREATE TABLE IF NOT EXISTS Content ('ID'  INTEGER PRIMARY KEY AUTOINCREMENT,'title'  TEXT,'content' TEXT,'title2' TEXT,'pub_time' INTEGER DEFAULT 0,'is_ping' DEFAULT 0)");
-    db.run("CREATE TABLE IF NOT EXISTS temp_Content ('ID'  INTEGER PRIMARY KEY AUTOINCREMENT,'title'  TEXT,'content' TEXT,'title2' TEXT,'pub_time' INTEGER DEFAULT 0,'is_ping' DEFAULT 0)");
+    await db.run("CREATE TABLE IF NOT EXISTS Content ('ID'  INTEGER PRIMARY KEY AUTOINCREMENT,'title'  TEXT,'content' TEXT,'title2' TEXT,'pub_time' INTEGER DEFAULT 0,'is_ping' DEFAULT 0)");
+    await db.run("CREATE TABLE IF NOT EXISTS temp_Content ('ID'  INTEGER PRIMARY KEY AUTOINCREMENT,'title'  TEXT,'content' TEXT,'title2' TEXT,'pub_time' INTEGER DEFAULT 0,'is_ping' DEFAULT 0)");
     return {resfile:resfile,newdb:db}
 }
-//获取全部数据
+
+//遍历收到的所有要处理的数据库，保存数据到新数据库的temp_Content
+async function convertDb(dbList) {
+    for (let key in dbList) {
+        let db = new sqlite3.Database(dbList[key])
+        db.all("SELECT 标题,内容 FROM Content ORDER BY random()",(err, rows)=>{
+            newdb.serialize(() => {
+                newdb.run('BEGIN;');
+                for(var i = 0; i < rows.length; i++) {
+                    sql = "INSERT INTO temp_Content (title,content) VALUES('"+rows[i].标题.replace("'","\"")+"','"+rows[i].内容.replace("'","\"")+"')"
+                    newdb.run(sql)
+                }
+                newdb.run('COMMIT');
+            })
+        })
+        db.close()
+    }
+}

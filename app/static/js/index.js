@@ -183,8 +183,13 @@ $("#submit").click(function () {
         }
     }
     console.log(subData)
-
+    $(".dialog-mask h3").html("处理中")
+    $(".dialog-mask").show()
     //异步通信，返回时调用data-reply事件
     ipcRenderer.send('submit-data', subData)
 })
-
+//异步通信，后台处理结束时，返回结果处理
+ipcRenderer.on('data-reply', function(event, arg) {
+    $(".dialog-mask").hide()
+    console.log(arg)
+})

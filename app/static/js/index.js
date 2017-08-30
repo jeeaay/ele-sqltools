@@ -32,7 +32,7 @@ $(".is-div-db .button").click(function (){
 $("#clear-keyword-list").click(function () {
     $(".add-keyword-opt ul").html("")
     $(".add-keyword-opt h3").show()
-    $("#keyword-files").val("")
+    keywordFileArr = []
 })
 //reset
 $("#reset").click(function () {
@@ -53,6 +53,7 @@ keywordHolder.ondragleave = keywordHolder.ondragend = () => {
 keywordHolder.ondrop = (e) => {
     e.preventDefault()
     let reg = /^(.*)\.txt$/
+    $(".add-keyword-opt").removeClass("hover")
     for (let f of e.dataTransfer.files) {
         if (!f.path.match(reg)) {
             alert("仅支持txt格式的文件");
@@ -79,18 +80,18 @@ dbHolder.ondragleave = dbHolder.ondragend = () => {
 }
 dbHolder.ondrop = (e) => {
     e.preventDefault()
-    $(".panel").show()
-    $(".db-holder").removeClass("hover")
     let reg = /^(.*)\.db3$/
+    $(".db-holder").removeClass("hover")
     $(".dialog-mask h3").html("正在计算")
     for (let f of e.dataTransfer.files) {
-        //显示loading
-        $(".dialog-mask").show()
         //判断后缀
         if (!f.path.match(reg)) {
-            alert("仅支持db3后缀的文件");
-            return false;
+            alert("仅支持db3后缀的文件")
+            return false
         }
+        //显示loading
+        $(".dialog-mask").show()
+        $(".panel").show()
         //异步通信，返回时调用db-rows-reply事件
         ipcRenderer.send('get-db-rows', f.path)
     }
@@ -112,7 +113,7 @@ ipcRenderer.on('db-rows-reply', function(event, arg) {
 
 //计算已发、未发的布文章
 $("#publish-count").keyup(function () {
-    $("#publish-count").val($.trim($("#publish-count").val()))
+    $("#publish-count").val($("#publish-count").val().trim())
     if (dbRowsCount - $("#publish-count").val() < 0) {
         $("#publish-count").val(dbRowsCount);
         $("#future-count").val(0);
@@ -121,7 +122,7 @@ $("#publish-count").keyup(function () {
     }
 })
 $("#future-count").keyup(function () {
-    $("#future-count").val($.trim($("#future-count").val()))
+    $("#future-count").val($("#future-count").val().trim())
     if (dbRowsCount - $("#future-count").val() < 0) {
         $("#future-count").val(dbRowsCount);
         $("#publish-count").val(0);
@@ -132,7 +133,7 @@ $("#future-count").keyup(function () {
 
 //计算数据库分割
 $("#posts-in-every-db").keyup(function () {
-    $("#posts-in-every-db").val($.trim($("#posts-in-every-db").val()))
+    $("#posts-in-every-db").val($("#posts-in-every-db").val().trim())
     if ($("#posts-in-every-db").val()) {
         let dbCount = Math.ceil(dbRowsCount / $("#posts-in-every-db").val());
         $("#db-count").val(dbCount);
@@ -141,7 +142,7 @@ $("#posts-in-every-db").keyup(function () {
     }
 })
 $("#db-count").keyup(function () {
-    $("#db-count").val($.trim($("#db-count").val()))
+    $("#db-count").val($("#db-count").val().trim())
     if ($("#db-count").val()) {
         let postsCount = Math.ceil(dbRowsCount / $("#db-count").val());
         $("#posts-in-every-db").val(postsCount);
@@ -154,6 +155,7 @@ $("#db-count").keyup(function () {
 $("#submit").click(function () {
     //需要提交的数据保存到一个对象中
     var subData = {
+        dbRowsCount:dbRowsCount,
         dbList:dbArr,
         keywordFileArr:keywordFileArr
     }
@@ -185,8 +187,14 @@ $("#submit").click(function () {
     console.log(subData)
     $(".dialog-mask h3").html("处理中")
     $(".dialog-mask").show()
-    //异步通信，返回时调用data-reply事件
+    //异步通信，全部处理完时调用data-reply事件
     ipcRenderer.send('submit-data', subData)
+
+})
+//
+ipcRenderer.on('step-reply', function(event, arg) {
+    $(".dialog-mask h3").html(arg.title)
+    console.log(arg)
 })
 //异步通信，后台处理结束时，返回结果处理
 ipcRenderer.on('data-reply', function(event, arg) {

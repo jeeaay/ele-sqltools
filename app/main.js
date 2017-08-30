@@ -1,8 +1,8 @@
 const { app, BrowserWindow, ipcMain } = require('electron')
 const path = require('path')
 const url = require('url')
-//const sqlite3 = require(process.resourcesPath+'/sql.asar/sqlite3.js')
-const sqlite3 = require(path.join(__dirname,'../sql.asar/sqlite3.js'))
+    //const sqlite3 = require(process.resourcesPath+'/sql.asar/sqlite3.js')
+const sqlite3 = require(path.join(__dirname, '../sql.asar/sqlite3.js'))
 let win
 
 function createWindow() {
@@ -57,94 +57,122 @@ app.on('activate', () => {
 
 //计算数据库文章数
 ipcMain.on('get-db-rows', (event, arg) => {
-    let db = new sqlite3.Database(arg)
-    db.get("select count(*) from Content",function (err,row) {
-        for (let key in row) {
-            if (row.hasOwnProperty(key)) {
-                let element = row[key]
-                console.log(element)
-                event.sender.send('db-rows-reply', {"path":arg,"count":element});
-            }
-        }
-    })
-})
-//开始数据处理
-ipcMain.on('submit-data', (event, arg) => {
-    async () => {
-        //1. 初始化结果数据库，resfile为数据库路径 newdb为新数据库的sqlite3实例
-        let {resfile,newdb} = await setResDb(arg.dbList[0])
-        //2. 合并数据，整合到新数据库的temp_Content
-        for (let key in arg.dbList) {
-            let db = new sqlite3.Database(arg.dbList[key])
-            db.all("SELECT 标题,内容 FROM Content ORDER BY random()",(err, rows)=>{
-                newdb.serialize(() => {
-                    newdb.run('BEGIN;');
-                    for(var i = 0; i < rows.length; i++) {
-                        sql = "INSERT INTO temp_Content (title,content) VALUES('"+rows[i].标题.replace("'","\"")+"','"+rows[i].内容.replace("'","\"")+"')"
-                        newdb.run(sql)
-                    }
-                    newdb.run('COMMIT');
-                })
-            })
-            db.close()
-        }
-
-        event.sender.send('data-reply', {"file":resfile});
-    }
-})
-
-
-ipcMain.on('get-db-path', (event, arg) => {
-    async () => {
-        //初始化结果数据库
-        let {resfile,newdb} =  await setResDb(arg[0])
-        //遍历收到的所有要处理的数据库
-        for (let key in arg) {
-            let db = new sqlite3.Database(arg[key])
-            db.all("SELECT 标题,内容 FROM Content ORDER BY random()",(err, rows)=>{
-                newdb.serialize(() => {
-                    
-                    newdb.run('BEGIN;');
-                    for(var i = 0; i < rows.length; i++) {
-                        sql = "INSERT INTO temp_Content (title,content) VALUES('"+rows[i].标题.replace("'","\"")+"','"+rows[i].内容.replace("'","\"")+"')"
-                        newdb.run(sql)
-                    }
-                    newdb.run('COMMIT');
-                })
-            })
-            db.close()
-        }
-        event.sender.send('get-db-path-reply', {"file":resfile});
-    }
-
-    //event.returnValue = {"file":resfile}
-
-})
-//创建结果的数据库文件
-async function setResDb (dbpath) {
-    let date = new Date();
-    let time = date.getFullYear() + "-" + (date.getMonth() < 10 ? '0' + (date.getMonth()+1) : (date.getMonth()+1)) + "-" + (date.getDate() < 10 ? '0' + date.getDate() : date.getDate()) + "_" + date.getHours() + "-" + date.getMinutes() + "-" +date.getSeconds();
-    let resfile = path.dirname(dbpath)+path.sep+time+".db"
-    let db = new sqlite3.Database(resfile)
-    await db.run("CREATE TABLE IF NOT EXISTS Content ('ID'  INTEGER PRIMARY KEY AUTOINCREMENT,'title'  TEXT,'content' TEXT,'title2' TEXT,'pub_time' INTEGER DEFAULT 0,'is_ping' DEFAULT 0)");
-    await db.run("CREATE TABLE IF NOT EXISTS temp_Content ('ID'  INTEGER PRIMARY KEY AUTOINCREMENT,'title'  TEXT,'content' TEXT,'title2' TEXT,'pub_time' INTEGER DEFAULT 0,'is_ping' DEFAULT 0)");
-    return {resfile:resfile,newdb:db}
-}
-
-//遍历收到的所有要处理的数据库，保存数据到新数据库的temp_Content
-async function convertDb(dbList) {
-    for (let key in dbList) {
-        let db = new sqlite3.Database(dbList[key])
-        db.all("SELECT 标题,内容 FROM Content ORDER BY random()",(err, rows)=>{
-            newdb.serialize(() => {
-                newdb.run('BEGIN;');
-                for(var i = 0; i < rows.length; i++) {
-                    sql = "INSERT INTO temp_Content (title,content) VALUES('"+rows[i].标题.replace("'","\"")+"','"+rows[i].内容.replace("'","\"")+"')"
-                    newdb.run(sql)
+        let db = new sqlite3.Database(arg)
+        db.get("select count(*) from Content", function(err, row) {
+            for (let key in row) {
+                if (row.hasOwnProperty(key)) {
+                    let element = row[key]
+                    event.sender.send('db-rows-reply', { "path": arg, "count": element });
                 }
-                newdb.run('COMMIT');
-            })
+            }
         })
+    })
+    //开始数据处理
+ipcMain.on('submit-data', async(event, arg) => {
+    //1. 初始化结果数据库，resfile为数据库路径 newdb为新数据库的sqlite3实例
+    event.sender.send('step-reply', { "title": "正在初始化数据库" });
+    let { resfile, newdb } = setResDb(arg.dbList[0])
+        //2. 合并数据，整合到新数据库的temp_Content
+    for (let value of arg.dbList) {
+        event.sender.send('step-reply', { "title": "正在处理数据库：" + path.basename(value) });
+        let db = new sqlite3.Database(value)
+        await convertDb(db, newdb)
         db.close()
     }
-}
+    //3. 打乱顺序，存入Content表
+    event.sender.send('step-reply', { "title": "正在生成Content表（乱序）" });
+    await randOrder(newdb)
+        //4. 添加随机时间和附加标题
+    if (arg.keywordFileArr.length || arg.randTime) {
+        await addToDb(newdb, arg)
+    }
+    //await convertDb(newdb,arg)
+
+    await vacuumDb(newdb)
+    newdb.close()
+    event.sender.send('data-reply', { "file": resfile });
+})
+
+//创建结果的数据库文件
+const setResDb = (dbpath) => {
+        let date = new Date();
+        let time = date.getFullYear() + "-" + (date.getMonth() < 10 ? '0' + (date.getMonth() + 1) : (date.getMonth() + 1)) + "-" + (date.getDate() < 10 ? '0' + date.getDate() : date.getDate()) + "_" + date.getHours() + "-" + date.getMinutes() + "-" + date.getSeconds();
+        let resfile = path.dirname(dbpath) + path.sep + time + ".db"
+        let db = new sqlite3.Database(resfile)
+        db.run("CREATE TABLE IF NOT EXISTS Content ('ID'  INTEGER PRIMARY KEY AUTOINCREMENT,'title'  TEXT,'content' TEXT,'title2' TEXT,'pub_time' INTEGER DEFAULT 0,'is_ping' DEFAULT 0)");
+        db.run("CREATE TABLE IF NOT EXISTS temp_Content ('ID'  INTEGER PRIMARY KEY AUTOINCREMENT,'title'  TEXT,'content' TEXT)");
+        return { resfile: resfile, newdb: db }
+    }
+    //保存数据到新数据库的temp_Content
+const convertDb = (db, newdb) => new Promise((res, rej) => {
+    db.all("SELECT 标题,内容 FROM Content ORDER BY random()", (err, rows) => {
+        newdb.serialize(() => {
+            newdb.run('BEGIN;');
+            for (var i = 0; i < rows.length; i++) {
+                if (rows[i].标题 && rows[i].内容) {
+                    sql = "INSERT INTO temp_Content (title,content) VALUES('" + rows[i].标题.replace(/[\'|’]/g, "\"") + "','" + rows[i].内容.replace(/[\'|’]/g, "\"") + "')"
+                    newdb.run(sql)
+                }
+            }
+            newdb.run('COMMIT', res);
+        })
+    })
+});
+//打乱顺序后存入Content表
+const randOrder = (db) => new Promise((res, rej) => {
+    db.serialize(() => {
+        db.run('BEGIN;');
+        db.run("INSERT INTO Content (`title`,`content`) SELECT `title`,`content` FROM 'temp_Content' ORDER BY random()")
+        db.run("DROP TABLE temp_Content;")
+        db.run('COMMIT', res)
+    })
+});
+//清理无用数据
+const vacuumDb = (db) => new Promise((res, rej) => {
+    db.run("VACUUM;", res)
+});
+//添加随机时间、关键词
+const addToDb = (db, arg) => new Promise((res, rej) => {
+    db.run("CREATE TABLE IF NOT EXISTS temp_Content ('ID'  INTEGER PRIMARY KEY AUTOINCREMENT,'title'  TEXT,'content' TEXT,'title2' TEXT,'pub_time' INTEGER DEFAULT 0)", () => {
+        db.all("SELECT title,content FROM Content ORDER BY random()", (err, rows) => {
+            let pub_time = 0
+            let title2 = null
+            //读取随机关键词文件，保存为数组keywordArr
+            if (arg.keywordFileArr.length) {
+                const fs = require("fs")
+                var keywordArr = new Array
+                for (let value of arg.keywordFileArr) {
+                    keywordArr.push(fs.readFileSync(value, 'utf-8').split(/\r+\n+/g))
+                }
+            }
+            if (arg.randTime) {
+                var currentTime = Date.parse(new Date())/1000
+            }
+            //遍历数据库
+            db.serialize(() => {
+                db.run('BEGIN;');
+                for (let i = 0; i < rows.length; i++) {
+                    //获取随机关键词
+                    if (arg.keywordFileArr.length) {
+                        title2 = ""
+                        for (let value of keywordArr) {
+                            title2 += value[Math.floor(Math.random() * value.length)] + " "
+                        }
+                        title2 = "'" + title2.trim() + "'"
+                    }
+                    //获取随机时间
+                    if (arg.randTime) {
+                        if (i < arg.randTime.publishCount) {
+                            pub_time = currentTime - Math.floor(Math.random() * arg.randTime.publishDay * 3600 * 24)
+                        }else{
+                            pub_time = currentTime + Math.floor(Math.random() * arg.randTime.futureDay * 3600 * 24)
+                        }
+                    }
+                    sql = "INSERT INTO temp_Content (title,content,pub_time,title2) VALUES('" + rows[i].title + "','" + rows[i].content + "'," + pub_time + "," + title2 + ")"
+                    db.run(sql)
+                }
+                db.run('COMMIT', res);
+            })
+        })
+    });
+});

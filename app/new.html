@@ -34,8 +34,9 @@
         .dialog-mask{opacity: 0.8;display: none}
         .dialog-mask .icon::before{color:#aed;font-size: 100px; }
         .dialog-mask .icon{position: absolute;position: fixed;margin: 0 auto}
+        .msg{padding-top: 50px}
         .msg h3{color: #0a8;text-align: center;padding: 20px 0}
-        .msg{width: 100px;margin: 0 auto;padding-top: 50px}
+        .msg div{width: 100px;margin: 0 auto;}
         
     </style>
 </head>
@@ -177,7 +178,9 @@
             <div class="dialog-mask">
                 <div class="msg">
                     <h3>处理中...</h3>
-                    <i class="icon icon-spinner rotate" aria-hidden="true"></i>
+                    <div>
+                        <i class="icon icon-spinner rotate" aria-hidden="true"></i>
+                    </div>
                 </div>
             </div>
         </form>

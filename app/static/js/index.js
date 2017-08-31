@@ -180,7 +180,7 @@ $("#submit").click(function () {
             return false
         }
         subData.dbDiv = {
-            postsinEverydb : $("#posts-in-every-db").val(),
+            postsInEverydb : $("#posts-in-every-db").val(),
             dbCount : $("#db-count").val()
         }
     }
@@ -191,7 +191,7 @@ $("#submit").click(function () {
     ipcRenderer.send('submit-data', subData)
 
 })
-//
+//展示当前处理信息
 ipcRenderer.on('step-reply', function(event, arg) {
     $(".dialog-mask h3").html(arg.title)
     console.log(arg)

@@ -22,7 +22,10 @@
     ],
     "extraResources":[
       "sql.asar"
-    ]
+    ],
+    "win":{
+      "icon": "app/icon.ico"
+    }
   },
   "scripts": {
     "postinstall": "install-app-deps",

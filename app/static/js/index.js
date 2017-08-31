@@ -194,10 +194,15 @@ $("#submit").click(function () {
 //展示当前处理信息
 ipcRenderer.on('step-reply', function(event, arg) {
     $(".dialog-mask h3").html(arg.title)
-    console.log(arg)
 })
 //异步通信，后台处理结束时，返回结果处理
 ipcRenderer.on('data-reply', function(event, arg) {
-    $(".dialog-mask").hide()
-    console.log(arg)
+    $(".dialog-mask h3").html("处理完毕！")
+    $(".msg div").hide()
+    $(".msg").append("<p>结果保存在:</p>")
+    $(".msg").append("<p>" +arg.file+ "</p>")
+    $(".msg").append("<p>(任意[点击]继续)</p>")
+    $(".dialog-mask").click(function () {
+        location.reload()
+    })
 })

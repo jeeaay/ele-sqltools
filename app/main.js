@@ -96,7 +96,8 @@ ipcMain.on('submit-data', async(event, arg) => {
     //5. 分割数据库
     if (arg.dbDiv) {
         event.sender.send('step-reply', { "title": "正在分割数据库" });
-        fs.mkdirSync(path.normalize(resfile.replace(path.extname(resfile),"")))
+        resfile = path.normalize(resfile.replace(path.extname(resfile),""))
+        fs.mkdirSync(resfile)
         //拆分步骤为多个Promise?
         // 5.1 初始化临时表
         await initTempTable(newdb)
@@ -165,13 +166,13 @@ const initTempTable = (db) => new Promise((res, rej) => {
 // 5.2储存分割后的数据
 const saveDivDb = (i, db, resfile, postsInEverydb, event) => new Promise((res, rej) => {
     event.sender.send('step-reply', { "title": "分割：正在生成第"+(i+1)+"个数据库" });
-    resDb = new sqlite3.Database(path.normalize(resfile.replace(path.extname(resfile),"")) + path.sep + String(i+1) + ".db")
+    resDb = new sqlite3.Database(resfile + path.sep + String(i+1) + ".db")
     resDb.run("CREATE TABLE IF NOT EXISTS Content ('ID'  INTEGER PRIMARY KEY AUTOINCREMENT,'title'  TEXT,'content' TEXT,'title2' TEXT,'pub_time' INTEGER DEFAULT 0,'is_ping' DEFAULT 0);",()=>{
         db.all("SELECT * FROM temp_Content where ID > " + (i*postsInEverydb) + " AND ID < " + ((i+1)*postsInEverydb) + " ORDER BY pub_time",async (err, rows) => {
             resDb.serialize(() => {
                 resDb.run('BEGIN;');
                 for(let value of rows){
-                    resDb.run("INSERT INTO Content (`title`,`content`,`title2`,`pub_time`) VALUES('" + value.title + "','" + value.content + "','" + value.title + "'," + value.pub_time +");")
+                    resDb.run("INSERT INTO Content (`title`,`content`,`title2`,`pub_time`) VALUES('" + value.title + "','" + value.content + "','" + value.title2 + "'," + value.pub_time +");")
                 }
                 resDb.run('COMMIT',()=>{
                     resDb.close()

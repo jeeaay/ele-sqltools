@@ -10,6 +10,8 @@ if (localStorage.keywordFileArr) {
     }
 }
 //选项显示、隐藏
+$(".panel").hide()
+
 $(".is-rand-time .button").click(function (){
     if ($(this).children().val()==1) {
         $(".rand-time-opt").slideDown(100)

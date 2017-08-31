@@ -2,8 +2,8 @@ const { app, BrowserWindow, ipcMain } = require('electron')
 const path = require('path')
 const url = require('url')
 const fs = require("fs")
-const sqlite3 = require(process.resourcesPath+'/sql.asar/sqlite3.js')
-//const sqlite3 = require(path.join(__dirname, '../sql.asar/sqlite3.js'))
+//const sqlite3 = require(process.resourcesPath+'/sql.asar/sqlite3.js')
+const sqlite3 = require(path.join(__dirname, '../sql.asar/sqlite3.js'))
 let win
 
 function createWindow() {
@@ -169,9 +169,15 @@ const saveDivDb = (i, db, resfile, postsInEverydb, event) => new Promise((res, r
     resDb.run("CREATE TABLE IF NOT EXISTS Content ('ID'  INTEGER PRIMARY KEY AUTOINCREMENT,'title'  TEXT,'content' TEXT,'title2' TEXT,'pub_time' INTEGER DEFAULT 0,'is_ping' DEFAULT 0);",()=>{
         db.all("SELECT * FROM temp_Content where ID > " + (i*postsInEverydb) + " AND ID < " + ((i+1)*postsInEverydb) + " ORDER BY pub_time",async (err, rows) => {
             resDb.serialize(() => {
+                let tittle2
                 resDb.run('BEGIN;');
                 for(let value of rows){
-                    resDb.run("INSERT INTO Content (`title`,`content`,`title2`,`pub_time`) VALUES('" + value.title + "','" + value.content + "','" + value.title2 + "'," + value.pub_time +");")
+                    if(value.title2){
+                        tittle2 = "'" + value.title2 + "'"
+                    }else{
+                        tittle2 = null
+                    }
+                    resDb.run("INSERT INTO Content (`title`,`content`,`title2`,`pub_time`) VALUES('" + value.title + "','" + value.content + "'," + tittle2 + "," + value.pub_time +");")
                 }
                 resDb.run('COMMIT',()=>{
                     resDb.close()

@@ -204,7 +204,7 @@ ipcRenderer.on('data-reply', function(event, arg) {
     $(".msg div").hide()
     $(".msg").append("<p>结果保存在:</p>")
     $(".msg").append("<p>" +arg.file+ "</p>")
-    $(".msg").append("<p>(任意[点击]继续)</p>")
+    $(".msg").append("<p>([点击]任意处继续)</p>")
     $(".dialog-mask").click(function () {
         location.reload()
     })

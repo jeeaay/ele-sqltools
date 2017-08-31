@@ -1,6 +1,14 @@
 const {ipcRenderer} = require('electron')
 const path = require('path')
-
+//读取缓存的关键词路径
+var keywordFileArr = new Array
+if (localStorage.keywordFileArr) {
+    keywordFileArr = localStorage.getItem("keywordFileArr").split(",");
+    $(".add-keyword-opt h3").hide()
+    for(let value of keywordFileArr){
+        $(".add-keyword-opt ul").append("<li>"+path.basename(value)+"</li>")
+    }
+}
 //选项显示、隐藏
 $(".is-rand-time .button").click(function (){
     if ($(this).children().val()==1) {
@@ -10,16 +18,7 @@ $(".is-rand-time .button").click(function (){
         $(".rand-time-opt").slideUp(100)
     }
 })
-$(".add-keyword-opt").hide()
-$(".panel").hide()
-$(".is-add-keyword .button").click(function (){
-    if ($(this).children().val()==1) {
-        $(".add-keyword-opt").slideDown(100)
-    }
-    if ($(this).children().val()==0) {
-        $(".add-keyword-opt").slideUp(100)
-    }
-})
+
 $(".is-div-db .button").click(function (){
     if ($(this).children().val()==1) {
         $(".div-db-opt").slideDown(100)
@@ -33,6 +32,7 @@ $("#clear-keyword-list").click(function () {
     $(".add-keyword-opt ul").html("")
     $(".add-keyword-opt h3").show()
     keywordFileArr = []
+    localStorage.removeItem("keywordFileArr")
 })
 //reset
 $("#reset").click(function () {
@@ -40,7 +40,6 @@ $("#reset").click(function () {
 })
 
 //拖放关键词文件
-var keywordFileArr = new Array
 const keywordHolder = document.getElementsByClassName('add-keyword-opt')[0]
 keywordHolder.ondragover = () => {
     $(".add-keyword-opt").addClass("hover")
@@ -61,7 +60,8 @@ keywordHolder.ondrop = (e) => {
         }
         $(".add-keyword-opt h3").hide()
         $(".add-keyword-opt ul").append("<li>"+path.basename(f.path)+"</li>")
-        keywordFileArr.push(f.path)  
+        keywordFileArr.push(f.path)
+        localStorage.setItem("keywordFileArr",keywordFileArr.toString())
     }
     return false;
 }
@@ -197,6 +197,7 @@ ipcRenderer.on('step-reply', function(event, arg) {
 })
 //异步通信，后台处理结束时，返回结果处理
 ipcRenderer.on('data-reply', function(event, arg) {
+    alert("处理完毕")
     $(".dialog-mask h3").html("处理完毕！")
     $(".msg div").hide()
     $(".msg").append("<p>结果保存在:</p>")

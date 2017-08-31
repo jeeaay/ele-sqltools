@@ -12,14 +12,13 @@ function createWindow() {
 
     // 加载应用的 index.html。
     win.loadURL(url.format({
-        //pathname: path.join(__dirname, 'index.html'),
-        pathname: path.join(__dirname, 'new.html'),
+        pathname: path.join(__dirname, 'index.html'),
         protocol: 'file:',
         slashes: true
     }))
 
     // 打开开发者工具。
-    win.webContents.openDevTools()
+    //win.webContents.openDevTools()
 
 
     // 当 window 被关闭，这个事件会被触发。
@@ -84,7 +83,7 @@ ipcMain.on('submit-data', async(event, arg) => {
     }
 
     //3. 打乱顺序，存入Content表
-    event.sender.send('step-reply', { "title": "正在生成Content表（乱序）" });
+    event.sender.send('step-reply', { "title": "正在生成Content表" });
     await randOrder(newdb)
         
     //4. 添加随机时间和附加标题
@@ -109,7 +108,7 @@ ipcMain.on('submit-data', async(event, arg) => {
         //await divDb(newdb, resfile, arg.dbDiv, event)
     }
     
-    console.log("clear")
+    event.sender.send('step-reply', { "title": "即将完成：正在清理无用数据" });
     //清理、结束
     await vacuumDb(newdb)
     newdb.close()
@@ -246,29 +245,3 @@ const vacuumDb = (db) => new Promise((res, rej) => {
         db.run("VACUUM;", res)
     })
 });
-
-/* //分割数据库
-const divDb = (db, resfile, arg, event) => new Promise((res, rej) => {
-    //新建目录用于储存分割结果
-    let resDir = path.normalize(resfile.replace(path.extname(resfile),""))
-    fs.mkdirSync(resDir)
-    //打乱顺序，存入临时表中
-    db.run("CREATE TABLE IF NOT EXISTS temp_Content ('ID'  INTEGER PRIMARY KEY AUTOINCREMENT,'title'  TEXT,'content' TEXT,'title2' TEXT,'pub_time' INTEGER DEFAULT 0);",()=>{
-        db.serialize(() => {
-            db.run('BEGIN;');
-            db.run("INSERT INTO temp_Content (`title`,`content`,`pub_time`,`title2`) SELECT `title`,`content`,`pub_time`,`title2` FROM 'Content' ;")
-            db.run('COMMIT', function () {
-                let resDb
-                for (let i = 0; i < arg.dbCount; i++) {
-                    event.sender.send('step-reply', { "title": "分割：正在生成第"+(i+1)+"个数据库" });
-                    resDb = new sqlite3.Database(resDir + path.sep + String(i+1) + ".db")
-                    db.all("SELECT * FROM temp_Content where ID > " + (i*arg.postsInEverydb) + " AND ID < " + ((i+1)*arg.postsInEverydb) + " ORDER BY pub_time",async (err, rows) => {
-                        await saveDivDb(resDb, rows)
-                        resDb.close()
-                    })
-                }
-                db.run("DROP TABLE temp_Content;",res)
-            })
-        })
-    })
-}); */

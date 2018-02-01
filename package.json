@@ -10,9 +10,9 @@
     "type": "git",
     "url": "git@github.com:jeeaay/ele-sqltools.git"
   },
-  "version": "1.1.0",
+  "version": "1.2.0",
   "author": "Jeeaay <wrjie@msn.cn>",
-  "copyright": "© 2017, Liming Ltd.",
+  "copyright": "© 2018, Liming Ltd.",
   "main": "app/main.js",
   "build": {
     "appId": "com.lmlq.jeay.sqlite-tool",

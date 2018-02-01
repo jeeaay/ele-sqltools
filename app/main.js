@@ -2,7 +2,9 @@ const { app, BrowserWindow, ipcMain } = require('electron')
 const path = require('path')
 const url = require('url')
 const fs = require("fs")
+//编译引入路径
 //const sqlite3 = require(process.resourcesPath+'/sql.asar/sqlite3.js')
+//调试引入路径
 const sqlite3 = require(path.join(__dirname, '../sql.asar/sqlite3.js'))
 let win
 

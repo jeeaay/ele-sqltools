@@ -9,9 +9,17 @@ if (localStorage.keywordFileArr) {
         $(".add-keyword-opt ul").append("<li>"+path.basename(value)+"</li>")
     }
 }
+//读取缓存的关键词路径
+var dateFile
+if (localStorage.dateFile) {
+    dateFile = localStorage.getItem("dateFile");
+    $(".datefile-list h3").hide()
+    $(".datefile-list ul").html("<li>"+path.basename(dateFile)+"</li>")
+}
+
 //选项显示、隐藏
 $(".panel").hide()
-
+$("#submit").attr("disabled",true)
 $(".is-rand-time .button").click(function (){
     if ($(this).children().val()==1) {
         $(".rand-time-opt").slideDown(100)
@@ -29,12 +37,19 @@ $(".is-div-db .button").click(function (){
         $(".div-db-opt").slideUp(100)
     }
 })
-//清除关键词选择
+//清除关键词文件
 $("#clear-keyword-list").click(function () {
     $(".add-keyword-opt ul").html("")
     $(".add-keyword-opt h3").show()
     keywordFileArr = []
     localStorage.removeItem("keywordFileArr")
+})
+//清除日期文件
+$("#clear-datefile-list").click(function () {
+    $(".datefile-list ul").html("")
+    $(".datefile-list h3").show()
+    dateFile = ""
+    localStorage.removeItem("dateFile")
 })
 //reset
 $("#reset").click(function () {
@@ -67,6 +82,32 @@ keywordHolder.ondrop = (e) => {
     }
     return false;
 }
+//拖放日期文件
+const datefileHolder = document.getElementsByClassName('datefile-list')[0]
+datefileHolder.ondragover = () => {
+    $(".datefile-list").addClass("hover")
+    return false;
+}
+datefileHolder.ondragleave = datefileHolder.ondragend = () => {
+    $(".datefile-list").removeClass("hover")
+    return false;
+}
+datefileHolder.ondrop = (e) => {
+    e.preventDefault()
+    let reg = /^(.*)\.txt$/
+    $(".datefile-list").removeClass("hover")
+    for (let f of e.dataTransfer.files) {
+        if (!f.path.match(reg)) {
+            alert("仅支持txt格式的文件");
+            return false;
+        }
+        $(".datefile-list h3").hide()
+        $(".datefile-list ul").html("<li>"+path.basename(f.path)+"</li>")
+        dateFile = f.path
+        localStorage.setItem("dateFile",dateFile)
+    }
+    return false;
+}
 
 //拖放数据库
 var dbArr = new Array
@@ -92,6 +133,7 @@ dbHolder.ondrop = (e) => {
             return false
         }
         //显示loading
+        $("#submit").attr("disabled",false)
         $(".dialog-mask").show()
         $(".panel").show()
         //异步通信，返回时调用db-rows-reply事件
@@ -159,7 +201,8 @@ $("#submit").click(function () {
     var subData = {
         dbRowsCount:dbRowsCount,
         dbList:dbArr,
-        keywordFileArr:keywordFileArr
+        keywordFileArr:keywordFileArr,
+        dateFile:dateFile
     }
     //表单验证
     if ( $("input[name=rand-time]:checked").val() == 1 ) {
@@ -186,7 +229,11 @@ $("#submit").click(function () {
             dbCount : $("#db-count").val()
         }
     }
-    console.log(subData)
+    if ( $("input[name=skip-time]:checked").val() == 1 ) {
+        subData.timeskip = 1
+    }
+    
+    //console.log(subData)
     $(".dialog-mask h3").html("处理中")
     $(".dialog-mask").show()
     //异步通信，全部处理完时调用data-reply事件
@@ -195,6 +242,7 @@ $("#submit").click(function () {
 })
 //展示当前处理信息
 ipcRenderer.on('step-reply', function(event, arg) {
+    console.log(arg)
     $(".dialog-mask h3").html(arg.title)
 })
 //异步通信，后台处理结束时，返回结果处理
@@ -208,4 +256,9 @@ ipcRenderer.on('data-reply', function(event, arg) {
     $(".dialog-mask").click(function () {
         location.reload()
     })
+})
+
+ipcRenderer.on('console-reply', function(event, arg) {
+    console.log("1")
+    console.log(arg)
 })

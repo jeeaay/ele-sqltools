@@ -71,7 +71,7 @@ ipcMain.on('get-db-rows', (event, arg) => {
 //开始数据处理
 ipcMain.on('submit-data', async(event, arg) => {
     //1. 初始化结果数据库，resfile为数据库路径 newdb为新数据库的sqlite3实例
-    event.sender.send('step-reply', { "title": "正在初始化数据库" });
+    event.sender.send('step-reply', { "title": "正在初始化数据库" })
     let { resfile, newdb } = setResDb(arg.dbList[0])
 
     //2. 合并数据，整合到新数据库的temp_Content表
@@ -83,18 +83,18 @@ ipcMain.on('submit-data', async(event, arg) => {
     }
 
     //3. 打乱顺序，存入Content表
-    event.sender.send('step-reply', { "title": "正在生成Content表" });
+    event.sender.send('step-reply', { "title": "正在生成Content表" })
     await randOrder(newdb)
         
     //4. 添加随机时间和附加标题
     if (arg.keywordFileArr.length || arg.randTime) {
-        event.sender.send('step-reply', { "title": "正在添加随机时间/标题" });
+        event.sender.send('step-reply', { "title": "正在添加随机时间/标题" })
         await addToDb(newdb, arg)
     }
 
     //5. 分割数据库
     if (arg.dbDiv) {
-        event.sender.send('step-reply', { "title": "正在分割数据库" });
+        event.sender.send('step-reply', { "title": "正在分割数据库" })
         resfile = path.normalize(resfile.replace(path.extname(resfile),""))
         fs.mkdirSync(resfile)
         //拆分步骤为多个Promise?
@@ -195,13 +195,20 @@ const addToDb = (db, arg) => new Promise((res, rej) => {
         db.all("SELECT title,content FROM Content ", (err, rows) => {
             let pub_time = 0
             let title2 = null
-                //读取随机关键词文件，保存为数组keywordArr
+            
+            //读取随机关键词文件，保存为数组keywordArr
             if (arg.keywordFileArr.length) {
                 var keywordArr = new Array
                 for (let value of arg.keywordFileArr) {
                     keywordArr.push(fs.readFileSync(value, 'utf-8').split(/\r+\n+/g))
                 }
             }
+            //读取跳过日期文件，保存为数组dateFile
+            if (arg.dateFile) {
+                //获得非工作日
+                var dateFile = fs.readFileSync(arg.dateFile, 'utf-8').split(/\r+\n+/g)           
+            }
+
             if (arg.randTime) {
                 var currentTime = Date.parse(new Date()) / 1000
             }
@@ -219,10 +226,21 @@ const addToDb = (db, arg) => new Promise((res, rej) => {
                     }
                     //获取随机时间
                     if (arg.randTime) {
-                        if (i < arg.randTime.publishCount) {
-                            pub_time = currentTime - Math.floor(Math.random() * arg.randTime.publishDay * 3600 * 24)
-                        } else {
-                            pub_time = currentTime + Math.floor(Math.random() * arg.randTime.futureDay * 3600 * 24)
+                        //跳过非工作时间
+                        if (dateFile) {
+                            if (i < arg.randTime.publishCount) {
+                                pub_time = getRandTimeStamp(dateFile,currentTime,arg.randTime.publishDay,true)
+                            } else {
+                                pub_time = getRandTimeStamp(dateFile,currentTime,arg.randTime.futureDay,false)
+                            }
+                            console.log("pubtime:"+pub_time)
+                        }else{
+                        //不跳过工作时间
+                            if (i < arg.randTime.publishCount) {
+                                pub_time = currentTime - Math.floor(Math.random() * arg.randTime.publishDay * 3600 * 24)
+                            } else {
+                                pub_time = currentTime + Math.floor(Math.random() * arg.randTime.futureDay * 3600 * 24)
+                            }
                         }
                     }
                     sql = "INSERT INTO temp_Content (title,content,pub_time,title2) VALUES('" + rows[i].title + "','" + rows[i].content + "'," + pub_time + "," + title2 + ")"
@@ -251,3 +269,49 @@ const vacuumDb = (db) => new Promise((res, rej) => {
         db.run("VACUUM;", res)
     })
 });
+
+//生成 非工作时间的随机时间戳
+
+const getRandTimeStamp = (arr,currentTime,dayCount,isPublished) => {
+    let randtime
+    if (isPublished) {
+        randtime = currentTime - Math.floor(Math.random() * dayCount * 3600 * 24)
+    }else{
+        randtime = currentTime + Math.floor(Math.random() * dayCount * 3600 * 24)
+    }
+    //基于文本内容判断节假日表
+    let checkdate=new Date(randtime * 1000).format("yyyyMMdd")
+    if(arr.indexOf(checkdate)>=0){
+        return getRandTimeStamp(arr,currentTime,dayCount,isPublished)
+    }
+    // 判断是否是周末
+    checktime = new Date(randtime * 1000).getDay()
+    if ( checktime ==0 || checktime ==6 ) {
+        //console.log("sunday:"+checktime)
+        return getRandTimeStamp(arr,currentTime,dayCount,isPublished)
+    }
+    // 判断是否在工作时间内 08:00:00 - 18:00:00
+    checktime = new Date(randtime * 1000).format("hhmmss")
+    if ( checktime<080000 || checktime>180000 ) {
+        //console.log("checktimewk:"+checktime)
+        return getRandTimeStamp(arr,currentTime,dayCount,isPublished)
+    }
+    return randtime
+}
+
+Date.prototype.format = function (fmt) { //
+    var o = {
+        "M+": this.getMonth() + 1, //Month
+        "d+": this.getDate(), //Day
+        "h+": this.getHours(), //Hour
+        "m+": this.getMinutes(), //Minute
+        "s+": this.getSeconds(), //Second
+        "q+": Math.floor((this.getMonth() + 3) / 3), //Season
+        "S": this.getMilliseconds() //millesecond
+    };
+    if (/(y+)/.test(fmt)) fmt = fmt.replace(RegExp.$1, (this.getFullYear() + "").substr(4 - RegExp.$1.length));
+    for (var k in o)
+        if (new RegExp("(" + k + ")").test(fmt)) fmt = fmt.replace(RegExp.$1, (RegExp.$1.length == 1) ? (o[k]) : (("00" + o[k]).substr(("" + o[k]).length)));
+    return fmt;
+}
+//var time=new Date(timestamp).format("dd/MM/yyyy hh:mm:ss");

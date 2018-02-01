@@ -38,7 +38,7 @@
         .msg h3{color: #0a8;text-align: center;padding: 20px 0}
         .msg p{color: #0a8;text-align: center;}
         .msg div{width: 100px;margin: 0 auto;}
-        #clear-keyword-list{position: absolute;right: 15px}
+        #clear-datefile-list,#clear-keyword-list{position: absolute;right: 15px}
     </style>
 </head>
 
@@ -72,6 +72,18 @@
                     </div>
                     <!--随机时间选项-->
                     <div class="rand-time-opt">
+                        <!--跳过非工作时间-->
+                        <div class="panel">
+                            <div class="panel-body" style="position: relative">
+                                <span id="clear-datefile-list" class="padding text-red" style="cursor: pointer">清空</span>
+                                <div class="holder datefile-list" style="height:80px">
+                                    <h3 class="padding text-center">如果需要跳过非工作时间，请将日期文件拖放到此处<br>(如果不需要该功能请勿放入)</h3>
+                                    <ul class="list-unstyle list-inline">
+                                        
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
                         <div class="form-group">
                             <div class="label">
                                 <label>已发布数量：</label>
@@ -110,7 +122,7 @@
             <!--附加关键词-->
             <div class="panel">
                 <div class="panel-body" style="position: relative">
-                    <span id="clear-keyword-list" class="padding text-red" style="cursor: pointer">清除选择</span>
+                    <span id="clear-keyword-list" class="padding text-red" style="cursor: pointer">清空</span>
                     <div class="holder add-keyword-opt" style="height:80px">
                         <h3>请将随机关键词文件拖放到此处(如果不需要请勿放入)</h3>
                         <ul class="list-unstyle list-inline">

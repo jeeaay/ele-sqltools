@@ -233,7 +233,7 @@ const addToDb = (db, arg) => new Promise((res, rej) => {
                             } else {
                                 pub_time = getRandTimeStamp(dateFile,currentTime,arg.randTime.futureDay,false)
                             }
-                            console.log("pubtime:"+pub_time)
+                            //console.log("pubtime:"+pub_time)
                         }else{
                         //不跳过工作时间
                             if (i < arg.randTime.publishCount) {

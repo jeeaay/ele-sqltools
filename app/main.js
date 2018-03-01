@@ -3,9 +3,9 @@ const path = require('path')
 const url = require('url')
 const fs = require("fs")
 //编译引入路径
-//const sqlite3 = require(process.resourcesPath+'/sql.asar/sqlite3.js')
+const sqlite3 = require(process.resourcesPath+'/sql.asar/sqlite3.js')
 //调试引入路径
-const sqlite3 = require(path.join(__dirname, '../sql.asar/sqlite3.js'))
+//const sqlite3 = require(path.join(__dirname, '../sql.asar/sqlite3.js'))
 let win
 
 function createWindow() {
@@ -174,6 +174,9 @@ const saveDivDb = (i, db, resfile, postsInEverydb, event) => new Promise((res, r
                 let tittle2
                 resDb.run('BEGIN;');
                 for(let value of rows){
+                    if(value.title.trim()==""){
+                        continue
+                    }
                     if(value.title2){
                         tittle2 = "'" + value.title2 + "'"
                     }else{

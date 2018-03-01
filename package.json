@@ -1,6 +1,6 @@
 {
   "name": "data-base-tools",
-  "productName": "SQLiteTool",
+  "productName": "数据库转换工具",
   "description": "Converting database structure",
   "keywords": [
     "electron",
@@ -10,7 +10,7 @@
     "type": "git",
     "url": "git@github.com:jeeaay/ele-sqltools.git"
   },
-  "version": "1.2.0",
+  "version": "1.2.2",
   "author": "Jeeaay <wrjie@msn.cn>",
   "copyright": "© 2018, Liming Ltd.",
   "main": "app/main.js",
